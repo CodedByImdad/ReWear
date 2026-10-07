@@ -1,21 +1,48 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const { isLoggedIn, isAdmin, user, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const navigate = useNavigate();
 
   const close = () => setOpen(false);
 
+  useEffect(() => {
+    if (!accountOpen) return undefined;
+
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.account-dropdown')) setAccountOpen(false);
+    };
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') setAccountOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [accountOpen]);
+
   const handleLogout = () => {
     logout();
     close();
+    setAccountOpen(false);
     navigate('/');
   };
 
   const navClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
+
+  const handleItemClick = () => {
+    close();
+    setAccountOpen(false);
+  };
 
   const guestLinks = (
     <>
@@ -77,57 +104,56 @@ const Navbar = () => {
           Impact
         </NavLink>
       </li>
-      <li className="nav-item dropdown">
-        <a
-          className="nav-link dropdown-toggle"
-          href="#dashboard"
+      <li className="nav-item dropdown account-dropdown">
+        <button
+          type="button"
+          className="nav-link dropdown-toggle border-0 bg-transparent text-start"
           role="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-          onClick={(e) => e.preventDefault()}
+          aria-expanded={accountOpen}
+          onClick={() => setAccountOpen((v) => !v)}
         >
           <i className="bi bi-person-circle me-1" />
           {user?.name?.split(' ')[0] || 'Account'}
-        </a>
-        <ul className="dropdown-menu dropdown-menu-end">
+        </button>
+        <ul className={`dropdown-menu dropdown-menu-end${accountOpen ? ' show' : ''}`}>
           <li>
-            <Link className="dropdown-item" to="/dashboard" onClick={close}>
+            <Link className="dropdown-item" to="/dashboard" onClick={handleItemClick}>
               <i className="bi bi-speedometer2 me-2" />
               Dashboard
             </Link>
           </li>
           <li>
-            <Link className="dropdown-item" to="/profile" onClick={close}>
+            <Link className="dropdown-item" to="/profile" onClick={handleItemClick}>
               <i className="bi bi-person me-2" />
               Profile
             </Link>
           </li>
           <li>
-            <Link className="dropdown-item" to="/my-listings" onClick={close}>
+            <Link className="dropdown-item" to="/my-listings" onClick={handleItemClick}>
               <i className="bi bi-grid me-2" />
               My Listings
             </Link>
           </li>
           <li>
-            <Link className="dropdown-item" to="/my-requests" onClick={close}>
+            <Link className="dropdown-item" to="/my-requests" onClick={handleItemClick}>
               <i className="bi bi-arrow-left-right me-2" />
               My Requests
             </Link>
           </li>
           <li>
-            <Link className="dropdown-item" to="/incoming-requests" onClick={close}>
+            <Link className="dropdown-item" to="/incoming-requests" onClick={handleItemClick}>
               <i className="bi bi-inbox me-2" />
               Incoming Requests
             </Link>
           </li>
           <li>
-            <Link className="dropdown-item" to="/my-exchanges" onClick={close}>
+            <Link className="dropdown-item" to="/my-exchanges" onClick={handleItemClick}>
               <i className="bi bi-arrow-repeat me-2" />
               My Exchanges
             </Link>
           </li>
           <li>
-            <Link className="dropdown-item" to="/my-donations" onClick={close}>
+            <Link className="dropdown-item" to="/my-donations" onClick={handleItemClick}>
               <i className="bi bi-gift me-2" />
               My Donations
             </Link>
@@ -138,7 +164,7 @@ const Navbar = () => {
                 <hr className="dropdown-divider" />
               </li>
               <li>
-                <Link className="dropdown-item text-danger" to="/admin" onClick={close}>
+                <Link className="dropdown-item text-danger" to="/admin" onClick={handleItemClick}>
                   <i className="bi bi-shield-lock me-2" />
                   Admin Dashboard
                 </Link>
